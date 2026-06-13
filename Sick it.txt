@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Voltage Lab v2.7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #121212; user-select: none; }
+        .canvas-shake { transition: transform 0.05s ease-out; }
+    </style>
+</head>
+<body class="text-neutral-200 min-h-screen flex flex-col">
+
+    <header class="p-4 border-b border-neutral-800 bg-neutral-900/50 flex items-center justify-between">
+        <h1 class="text-xs font-bold tracking-widest uppercase text-neutral-400">VOLTAGE LAB // ACTIVE_MATRIX</h1>
+    </header>
+
+    <main class="flex-grow flex flex-col lg:flex-row p-4 gap-4">
+        <div class="flex-grow bg-black rounded-xl border border-neutral-800 flex items-center justify-center overflow-hidden">
+            <canvas id="shock-canvas" class="w-full h-full"></canvas>
+        </div>
+
+        <div class="w-full lg:w-80 space-y-6 bg-neutral-900/50 p-6 rounded-xl border border-neutral-800">
+            <div>
+                <label class="text-xs font-bold text-neutral-500">PRESETS</label>
+                <select id="preset-selector" class="w-full mt-2 bg-black border border-neutral-700 p-2 text-xs rounded text-white">
+                    <option value="default">Standard Operation</option>
+                    <option value="thunder">Thunderstorm Mode</option>
+                    <option value="static">Static Discharge</option>
+                </select>
+            </div>
+
+            <button onclick="saveCanvas()" class="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-bold uppercase tracking-widest border border-neutral-600">Export PNG</button>
+            <button id="gyro-btn" onclick="requestGyroPermission()" class="hidden w-full py-2 bg-purple-900/30 border border-purple-500 text-purple-300 text-xs font-bold uppercase">Enable Motion Sensors</button>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('shock-canvas');
+        const ctx = canvas.getContext('2d');
+        let screenShake = 0;
+
+        // --- Core Utility: PNG Export ---
+        function saveCanvas() {
+            const link = document.createElement('a');
+            link.download = 'voltage-export.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+
+        // --- Motion Sensors ---
+        function requestGyroPermission() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(res => {
+                    if (res === 'granted') document.getElementById('gyro-btn').classList.add('hidden');
+                });
+            }
+        }
+
+        window.addEventListener('deviceorientation', (e) => {
+            // Mapping tilt to shake intensity
+            screenShake = (Math.abs(e.gamma) + Math.abs(e.beta)) * 0.5;
+        }, true);
+
+        // --- Initialization & Loop ---
+        function resize() {
+            canvas.width = canvas.clientWidth * window.devicePixelRatio;
+            canvas.height = canvas.clientHeight * window.devicePixelRatio;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply subtle visual shake based on variable
+            const offsetX = (Math.random() - 0.5) * screenShake;
+            const offsetY = (Math.random() - 0.5) * screenShake;
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            // Draw your primary logo logic here...
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(canvas.width/2 - 50, canvas.height/2 - 50, 100, 100);
+            ctx.restore();
+
+            if (screenShake > 0.1) screenShake *= 0.9;
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+    </script>
+</body>
+</html>
